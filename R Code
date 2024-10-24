@@ -1,0 +1,67 @@
+# Load necessary packages for beta regression, data manipulation, statistical tests, and visualization.
+require(readxl)     # To read Excel files.
+require(betareg)    # For beta regression.
+require(dplyr)      # For data manipulation.
+require(car)        # For calculating VIF (multicollinearity).
+require(lmtest)     # For statistical tests (Durbin-Watson, Breusch-Pagan, RESET).
+require(ggplot2)    # For data visualization.
+
+# Set the working directory where the data is located.
+setwd("your/data/path")  
+getwd()  # Check that the working directory is set correctly.
+
+# Load environmental data from an Excel file.
+Var = data.frame(read_excel('Environental_Data.xls', 1))  
+head(Var)  # Display the first few rows of the environmental data.
+str(Var)   # Display the structure of the environmental data.
+
+# Load proportional data from another Excel file. 
+ind = data.frame(read_excel('Your_Proportions_data.xlsx', 1))  
+head(ind)  # Display the first few rows of the proportional data.
+str(ind)   # Display the structure of the proportional data.
+
+# Perform a beta regression with 'FD' as the dependent variable and 'Elevation' and 'EVI' as independent variables.
+Mode1 = betareg(Ind$FD ~ Var$Elevation + Var$EVI)
+Mode1  # Display the fitted model.
+summary(Mode1)  # Model summary (coefficients, standard errors, significance, etc.).
+
+
+# Checking assumptions:
+
+# Visualize the distribution of the dependent variable (FD) using a histogram.
+ggplot(Ind, aes(x = FD)) +
+  geom_histogram(aes(y = ..density..),  # Use 'density' on the Y axis for normalized density.
+                 binwidth = 0.04,       # Define the bin width for the histogram bars.
+                 color = "darkblue",    # Color for the bar borders.
+                 fill = "dodgerblue",   # Fill color for the bars.
+                 alpha = 0.7) +         # Transparency level of the bars.
+  labs(x = "Functional Diversity",      # Label for the X axis.
+       y = "Frequency") +               # Label for the Y axis.
+  scale_x_continuous(expand = c(0,0),   # Set the limits for the X axis from 0 to 1, without expansion.
+                     limits = c(0,1)) +
+  scale_y_continuous(expand = c(0,0)) + # Set the Y axis limits, without expansion.
+  theme_classic() +                     # Apply a classic theme to the plot.
+  theme(text = element_text(size = 19)) # Adjust the text size in the plot.
+
+
+# Test for independence of residuals:
+require(lmtest)  
+dwtest(Mode1)  # Apply the Durbin-Watson test to check for residual independence. A value near 2 indicates independence.
+
+
+# Test for linearity in the mean scale:
+resettest(Mode1)  # Use the RESET test to detect specification errors in the model (whether non-linear relationships are missing).
+
+
+# Test for heteroscedasticity (constant variance):
+bptest(Mode1)  # Apply the Breusch-Pagan test to check if the residuals have constant variance.
+
+
+# Compare models to test the relationship between the mean and dispersion:
+Mode2 = betareg(Ind$FD ~ Var$Elevation + Var$EVI | Var$Elevation + Var$EVI)  
+# 'Mode2' adds a formula to model dispersion based on 'Elevation' and 'EVI'.
+AIC(Mode1, Mode2)  # Compare Mode1 and Mode2 using Akaike Information Criterion (AIC). The model with the lower AIC is better fitted.
+
+
+# Test for multicollinearity:
+vif(Mode1)  # Calculate the Variance Inflation Factor (VIF) to check for multicollinearity among the independent variables. A VIF close to 1 indicates little or no multicollinearity.
