@@ -1,6 +1,6 @@
 ---
 title: "Beta Regression Workflow in R"
-author: "Juan Carlos Rubio Polania"
+author: "Juan Carlos Rubio Polania, PhD"
 date: "2024-10-24"
 ---
 
